@@ -14,6 +14,10 @@ type Configs struct {
 }
 
 func LoadConfigs() {
+	if mode := os.Getenv("MODE"); mode == "PROD" {
+		return
+	}
+
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("error loading .env file")
 	}
