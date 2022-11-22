@@ -7,7 +7,7 @@ import (
 )
 
 func RegisterRouter(router *gin.Engine) {
-	router.POST("/mailer", sendEmail)
+	router.POST("/api/v1/mailer", sendEmail)
 }
 
 func sendEmail(c *gin.Context) {
@@ -17,7 +17,12 @@ func sendEmail(c *gin.Context) {
 		log.Println("Invalid payload")
 		c.JSON(400, gin.H{
 			"message": "Invalid request payload",
+			"error":   err.Error(),
 		})
+		return
+	}
+	if m.To == "" || m.Message == "" || m.Subject == "" {
+		c.JSON(400, gin.H{"message": "Invalid request payload"})
 		return
 	}
 	// send the email

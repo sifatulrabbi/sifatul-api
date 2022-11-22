@@ -15,7 +15,7 @@ func main() {
 	config := configs.GetConfigs()
 	router := gin.Default()
 
-	router.GET("/", func(c *gin.Context) {
+	router.GET("/api/v1", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Hello, World!",
 		})

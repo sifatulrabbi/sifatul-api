@@ -9,9 +9,9 @@ import (
 )
 
 type mailer struct {
-	To      string `json:"to"`
-	Subject string `json:"subject"`
-	Message string `json:"message"`
+	To      string `from:"to"`
+	Subject string `from:"subject"`
+	Message string `from:"message"`
 }
 
 func (m *mailer) Send() error {
