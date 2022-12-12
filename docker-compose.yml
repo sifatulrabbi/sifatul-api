@@ -5,4 +5,4 @@ services:
         container_name: sifatul-go-api
         env_file: ./.env
         ports:
-            - "8001:${PORT}"
+            - "8000:${PORT}"
