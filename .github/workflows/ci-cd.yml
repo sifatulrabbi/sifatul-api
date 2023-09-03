@@ -8,10 +8,6 @@ on:
 env:
   VERSION: 0.1.0
   GO_VERSION: 1.21.0
-  PORT: 9876
-  EMAIL_ACCOUNT: ${{ secrets.EMAIL_ACCOUNT }}
-  EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-  SMTP_HOST: ${{ secrets.SMTP_HOST }}
 
 jobs:
   test-app:
@@ -28,14 +24,12 @@ jobs:
 
       - name: Test
         env:
-          GOENV: testing
-          PORT: ${{ env.PORT }}
           SMTP_PORT_SSL: 465
           SMTP_PORT_TLS: 587
           EMAIL_ACCOUNT: ${{ env.EMAIL_ACCOUNT }}
           EMAIL_PASSWORD: ${{ env.EMAIL_PASSWORD }}
           SMTP_HOST: ${{ env.SMTP_HOST }}
-        run: go test ./...
+        run: GOENV=testing PORT=9876 go test ./...
 
       - name: Build
         run: go build -o sifatul-api ./main.go
