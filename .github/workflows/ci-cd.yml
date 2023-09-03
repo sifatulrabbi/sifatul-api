@@ -83,6 +83,7 @@ jobs:
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.HOST }}
+          port: 22
           key: ${{ secrets.SSH_SECRET_KEY }}
           username: root
           source: docker-compose.yml
@@ -105,6 +106,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
+          port: 22
           key: ${{ secrets.SSH_SECRET_KEY }}
           username: root
           script: cd ~/apps/sifatul-api && docker compose up -d
