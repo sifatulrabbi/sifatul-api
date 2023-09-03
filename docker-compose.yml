@@ -5,11 +5,4 @@ services:
     image: sifatulrabbi/sifatul-api:0.1.0
     ports:
       - "9876:9876"
-    environment:
-      GOENV: production
-      PORT: 9876
-      SMTP_PORT_SSL: 465
-      SMTP_PORT_TLS: 587
-      EMAIL_ACCOUNT: ${EMAIL_ACCOUNT}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
-      SMTP_HOST: ${SMTP_HOST}
+    env_file: ./env
