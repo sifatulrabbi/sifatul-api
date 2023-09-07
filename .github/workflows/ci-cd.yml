@@ -64,7 +64,7 @@ jobs:
           push: true
           tags: sifatulrabbi/sifatul-api:${{ env.VERSION }}
 
-  prepare-host-server:
+  restart-host-server-app:
     needs:
       - build-and-push-docker-hub
 
@@ -86,16 +86,7 @@ jobs:
           target: ~/apps/sifatul-api
           overwrite: true
 
-  run-the-app:
-    needs:
-      - build-and-push-docker-hub
-      - prepare-host-server
-
-    name: Run the app
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Run start command
+      - name: Run the app
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
@@ -110,13 +101,15 @@ jobs:
   update-nginx-config:
     needs:
       - build-and-push-docker-hub
-      - prepare-host-server
-      - run-the-app
+      - restart-host-server-app
 
     name: Update Nginx config
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Copy sifatul.com.conf
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -128,15 +121,7 @@ jobs:
           target: /etc/nginx/conf.d
           overwrite: true
 
-  restart-nginx:
-    needs:
-      - update-nginx-config
-
-    name: Restart Nginx
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check config and restart
+      - name: Verify config and restart
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
