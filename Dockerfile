@@ -1,6 +1,11 @@
-FROM golang:1.21.0 as builder
+FROM golang:1.21.0-alpine as builder
 
 WORKDIR /app
+
+ENV GOENV=production
+ENV PORT=9876
+ENV SMTP_PORT_SSL=465
+ENV SMTP_PORT_TLS=587
 
 COPY go.mod go.sum ./
 
@@ -8,24 +13,20 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -o ./sifatul-api ./main.go
+RUN go build -o ./api ./main.go
 
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/sifatul-api ./
-
-# Set environment variables with build arguments
 ENV GOENV=production
 ENV PORT=9876
 ENV SMTP_PORT_SSL=465
 ENV SMTP_PORT_TLS=587
-ENV SMTP_HOST=
-ENV EMAIL_ACCOUNT=
-ENV EMAIL_PASSWORD=
 
-EXPOSE $PORT
+COPY --from=builder ./app/api ./
 
-CMD [ "./sifatul-api" ]
+EXPOSE 9876
+
+CMD [ "./api" ]
