@@ -103,4 +103,7 @@ jobs:
           port: 22
           key: ${{ secrets.SSH_SECRET_KEY }}
           username: root
-          script: cd ~/apps/sifatul-api && docker compose up -d
+          script: |
+            cd ~/apps/sifatul-api && \
+            docker compose down && \
+            docker compose up -d
