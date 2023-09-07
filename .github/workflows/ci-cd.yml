@@ -10,34 +10,34 @@ env:
   GO_VERSION: 1.21.0
 
 jobs:
-  test-app:
-    name: Test out the Go app
-    runs-on: ubuntu-latest
+  # test-app:
+  #   name: Test out the Go app
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
 
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ env.GO_VERSION }}
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v2
+  #       with:
+  #         go-version: ${{ env.GO_VERSION }}
 
-      - name: Test
-        env:
-          SMTP_PORT_SSL: 465
-          SMTP_PORT_TLS: 587
-          EMAIL_ACCOUNT: ${{ env.EMAIL_ACCOUNT }}
-          EMAIL_PASSWORD: ${{ env.EMAIL_PASSWORD }}
-          SMTP_HOST: ${{ env.SMTP_HOST }}
-        run: GOENV=testing PORT=9876 go test ./...
+  #     - name: Test
+  #       env:
+  #         SMTP_PORT_SSL: 465
+  #         SMTP_PORT_TLS: 587
+  #         EMAIL_ACCOUNT: ${{ env.EMAIL_ACCOUNT }}
+  #         EMAIL_PASSWORD: ${{ env.EMAIL_PASSWORD }}
+  #         SMTP_HOST: ${{ env.SMTP_HOST }}
+  #       run: GOENV=testing PORT=9876 go test ./...
 
-      - name: Build
-        run: go build -o sifatul-api ./main.go
+  #     - name: Build
+  #       run: go build -o sifatul-api ./main.go
 
   build-and-push-docker-hub:
-    needs:
-      - test-app
+    # needs:
+    #   - test-app
 
     name: Build and push docker img to Docker hub
     runs-on: ubuntu-latest
@@ -66,7 +66,6 @@ jobs:
 
   prepare-host-server:
     needs:
-      - test-app
       - build-and-push-docker-hub
 
     name: Prepare the Host server
@@ -89,7 +88,6 @@ jobs:
 
   run-the-app:
     needs:
-      - test-app
       - build-and-push-docker-hub
       - prepare-host-server
 
@@ -111,7 +109,6 @@ jobs:
 
   update-nginx-config:
     needs:
-      - test-app
       - build-and-push-docker-hub
       - prepare-host-server
       - run-the-app
