@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sifatulrabbi/sifatul-api/controllers/emails"
@@ -17,7 +18,7 @@ var (
 
 func main() {
 	prepareENV()
-	r := gin.Default()
+	r := setupRouter()
 	v1 := r.Group("/v1")
 	v1.POST("/emails/to-me", emails.HandleEmailTome)
 
@@ -39,4 +40,33 @@ func prepareENV() {
 		}
 	}
 	PORT = os.Getenv("PORT")
+}
+
+func setupRouter() *gin.Engine {
+	r := gin.Default()
+
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"https://sifatul.com", "http://localhost:3000"}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
+	corsConfig.AllowHeaders = []string{
+		"Accept",
+		"Accept-Encoding",
+		"Accept-Language",
+		"Access-Control-Request-Headers",
+		"Access-Control-Request-Method",
+		"Authorization",
+		"Connection",
+		"Content-Type",
+		"Cookie",
+		"Date",
+		"If-Modified-Since",
+		"If-None-Match",
+		"Origin",
+		"Referrer",
+		"User-Agent",
+		"X-Requested-With",
+	}
+	r.Use(cors.New(corsConfig))
+
+	return r
 }
