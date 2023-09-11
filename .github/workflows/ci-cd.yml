@@ -35,7 +35,7 @@ jobs:
   #     - name: Build
   #       run: go build -o sifatul-api ./main.go
 
-  build-and-push-docker-hub:
+  deploy-on-hosting-server:
     # needs:
     #   - test-app
 
@@ -64,17 +64,6 @@ jobs:
           push: true
           tags: sifatulrabbi/sifatul-api:${{ env.VERSION }}
 
-  restart-host-server-app:
-    needs:
-      - build-and-push-docker-hub
-
-    name: Prepare the Host server
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Copy docker-compose.yml
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -98,18 +87,6 @@ jobs:
             docker compose down && \
             docker compose up -d
 
-  update-nginx-config:
-    needs:
-      - build-and-push-docker-hub
-      - restart-host-server-app
-
-    name: Update Nginx config
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Copy sifatul.com.conf
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -131,3 +108,71 @@ jobs:
           script: |
             sudo nginx -t && \
             sudo systemctl restart nginx
+
+  # restart-host-server-app:
+  #   needs:
+  #     - build-and-push-docker-hub
+
+  #   name: Prepare the Host server
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Copy docker-compose.yml
+  #       uses: appleboy/scp-action@v0.1.4
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         port: 22
+  #         key: ${{ secrets.SSH_SECRET_KEY }}
+  #         username: root
+  #         source: docker-compose.yml
+  #         target: ~/apps/sifatul-api
+  #         overwrite: true
+
+  #     - name: Run the app
+  #       uses: appleboy/ssh-action@v1.0.0
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         port: 22
+  #         key: ${{ secrets.SSH_SECRET_KEY }}
+  #         username: root
+  #         script: |
+  #           cd ~/apps/sifatul-api && \
+  #           docker compose down && \
+  #           docker compose up -d
+
+  # update-nginx-config:
+  #   needs:
+  #     - build-and-push-docker-hub
+  #     - restart-host-server-app
+
+  #   name: Update Nginx config
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Copy sifatul.com.conf
+  #       uses: appleboy/scp-action@v0.1.4
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         port: 22
+  #         key: ${{ secrets.SSH_SECRET_KEY }}
+  #         username: root
+  #         source: sifatul.com.conf
+  #         target: /etc/nginx/conf.d
+  #         overwrite: true
+
+  #     - name: Verify config and restart
+  #       uses: appleboy/ssh-action@v1.0.0
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         port: 22
+  #         key: ${{ secrets.SSH_SECRET_KEY }}
+  #         username: root
+  #         script: |
+  #           sudo nginx -t && \
+  #           sudo systemctl restart nginx
