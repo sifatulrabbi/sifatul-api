@@ -18,7 +18,7 @@ type SendEmailBody struct {
 }
 
 const (
-	receiver = "mdsifatulislam.rabbi@gmail.com"
+	receiver = "sifatul@sifatul.com"
 )
 
 func HandleEmailTome(c *gin.Context) {
@@ -62,7 +62,7 @@ func sendEmailToMe(senderEmail, senderName, senderSubject, senderMsg string) err
 		EMAIL_ACCOUNT  = os.Getenv("EMAIL_ACCOUNT")
 		EMAIL_PASSWORD = os.Getenv("EMAIL_PASSWORD")
 		smtpHost       = SMTP_HOST + ":" + SMTP_PORT_TLS
-		to             = []string{"mdsifatulislam.rabbi@gmail.com"}
+		to             = []string{"sifatul@sifatul.com"}
 		body           []byte
 		auth           smtp.Auth
 	)
@@ -84,7 +84,7 @@ func sendEmailToMe(senderEmail, senderName, senderSubject, senderMsg string) err
 		fmt.Sprintf("Subject: Portfolio | %s\r\n", senderSubject) +
 		fmt.Sprintf("To: %s\r\n", receiver) +
 		senderMsg +
-		fmt.Sprintf("Reply to - %s\r\n", senderEmail),
+		fmt.Sprintf("\r\n\r\nReply to - %s\r\n", senderEmail),
 	)
 
 	auth = smtp.PlainAuth("", EMAIL_ACCOUNT, EMAIL_PASSWORD, SMTP_HOST)
