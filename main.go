@@ -46,7 +46,7 @@ func setupRouter() *gin.Engine {
 	r := gin.Default()
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"https://sifatul.com", "http://localhost:3000"}
+	corsConfig.AllowOrigins = []string{"https://sifatul.com", "http://localhost:3000", "https://www.sifatul.com"}
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
 	corsConfig.AllowHeaders = []string{
 		"Accept",
