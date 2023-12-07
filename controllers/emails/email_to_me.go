@@ -82,7 +82,7 @@ func sendEmailToMe(senderEmail, senderName, senderSubject, senderMsg string) err
 
 	body = []byte(fmt.Sprintf("From: %s <%s>\r\n", senderName, senderEmail) +
 		fmt.Sprintf("Subject: Portfolio | %s\r\n", senderSubject) +
-		fmt.Sprintf("To: %s\r\n", receiver) +
+		fmt.Sprintf("To: %s\r\n\r\n", receiver) +
 		senderMsg +
 		fmt.Sprintf("\r\n\r\nReply to - %s\r\n", senderEmail),
 	)
