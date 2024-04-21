@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -o ./sifatul-api ./main.go
+RUN go build -o ./sifatul-api ./cmd/sifatul-api/main.go
 
 
 FROM alpine:latest
