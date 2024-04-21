@@ -8,7 +8,9 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/sifatulrabbi/sifatul-api/controllers/emails"
+
+	"github.com/sifatulrabbi/sifatul-api/internals/blogs"
+	"github.com/sifatulrabbi/sifatul-api/internals/controllers/emails"
 )
 
 var (
@@ -20,7 +22,8 @@ func main() {
 	prepareENV()
 	r := setupRouter()
 	v1 := r.Group("/v1")
-	v1.POST("/emails/to-me", emails.HandleEmailTome)
+	v1.POST("/emails/to-me", emails.HandleEmailToMe)
+	blogs.RegisterBlogRoutes(v1)
 
 	r.NoRoute(func(c *gin.Context) {
 		errMsg := fmt.Sprintf("Not found: %s %s", c.Request.Method, c.Request.URL.Path)

@@ -21,7 +21,7 @@ const (
 	receiver = "sifatul@sifatul.com"
 )
 
-func HandleEmailTome(c *gin.Context) {
+func HandleEmailToMe(c *gin.Context) {
 	defer c.Abort()
 
 	p := SendEmailBody{}
