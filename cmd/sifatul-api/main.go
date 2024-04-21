@@ -21,7 +21,7 @@ var (
 func main() {
 	prepareENV()
 	r := setupRouter()
-	v1 := r.Group("/v1")
+	v1 := r.Group("/api/v1")
 	v1.POST("/emails/to-me", emails.HandleEmailToMe)
 	blogs.RegisterBlogRoutes(v1)
 
