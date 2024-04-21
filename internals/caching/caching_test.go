@@ -1,8 +1,6 @@
 package caching
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 )
@@ -10,22 +8,22 @@ import (
 func TestCachingExpiration(t *testing.T) {
 	c := NewCustomExpiringCachingService(time.Second * 3)
 	c.Set("hello", "world")
-	v, err := c.Get("hello")
-	if err != nil || string(v) == "world" {
-		t.Error("failed to retrieve cache:", v, err)
-		return
-	}
 
 	time.Sleep(time.Second * 1)
-	v2, err := c.Get("hello")
-	if err != nil || string(v2) == "world" {
-		t.Error("failed to retrieve cache:", v, err)
+	v, err := c.Get("hello")
+	if ogValue, ok := v.(string); !ok {
+		t.Error("invalid returned data type")
+		return
+	} else {
+		if err != nil || ogValue != "world" {
+			t.Error("failed to retrieve cache:", v, err)
+		}
 	}
 
 	time.Sleep(time.Second * 2)
-	v3, err := c.Get("hello")
-	if err == nil || v3 != nil {
-		t.Error("failed to expire cache:", v3, err)
+	_, err = c.Get("hello")
+	if err == nil {
+		t.Error("failed to expire cache:", err)
 	}
 }
 
@@ -41,14 +39,14 @@ func TestCachingMaps(t *testing.T) {
 	rd, err := c.Get(key)
 	if err != nil {
 		t.Error("failed to retrieve data:", err)
+		return
 	}
-	data := map[string]string{}
-	if err = json.Unmarshal([]byte(rd), &data); err != nil {
-		t.Error("filed to parse cached bytes:", err)
-	}
-	fmt.Println(data)
-	if data["message"] != "Hello World" {
-		t.Error("filed to parse cached bytes:", err)
+	if ogValue, ok := rd.(map[string]string); !ok {
+		t.Error("invalid data type", ogValue)
+	} else {
+		if ogValue["message"] != "Hello World" {
+			t.Error("filed to parse cached bytes:", err)
+		}
 	}
 }
 
@@ -59,22 +57,17 @@ func TestCachingComplexData(t *testing.T) {
 
 	c := NewCustomExpiringCachingService(time.Second * 3)
 	key := "hello-2"
-	b, _ := json.Marshal(complexData{message: "Hello World"})
-	if err := c.Set(key, b); err != nil {
-		t.Error("failed to save data:", err)
-		return
+	if err := c.Set(key, complexData{message: "Hello World"}); err != nil {
+		t.Error("unable to cache data:", err)
 	}
 
 	rd, err := c.Get(key)
 	if err != nil {
-		t.Error("failed to retrieve data:", err)
+		t.Error("unable to retrieve data:", err)
 	}
-	data := complexData{}
-	if err = json.Unmarshal([]byte(rd), &data); err != nil {
-		t.Error("filed to parse cached bytes:", err)
-	}
-	fmt.Println(data)
-	if data.message != "Hello World" {
-		t.Error("filed to parse cached bytes:", err)
+	if d, ok := rd.(complexData); !ok {
+		t.Error("invalid data type:", d)
+	} else if d.message != "Hello World" {
+		t.Error("data got corrupted:", d)
 	}
 }

@@ -50,24 +50,22 @@ type CachedBlogService struct {
 var _ IBlogService = &CachedBlogService{}
 
 func NewCachedBlogService() CachedBlogService {
-	cbs := CachedBlogService{
+	s := CachedBlogService{
 		cachingService: caching.NewCustomExpiringCachingService(time.Hour * 1),
 	}
-	return cbs
+	return s
 }
 
-func (cbs *CachedBlogService) GetAllArticleEntries() (*ArticleEntries, error) {
+func (s *CachedBlogService) GetAllArticleEntries() (*ArticleEntries, error) {
 	blogEntries := ArticleEntries{}
 	url := "https://raw.githubusercontent.com/sifatulrabbi/blogs/main/index.json"
 
-	if cachedEntries, err := cbs.cachingService.Get(url); err != nil {
+	if cachedEntries, err := s.cachingService.Get(url); err != nil {
 		log.Println("Error while getting cached data:", err)
-	} else if err = json.Unmarshal(cachedEntries, &blogEntries); err != nil {
-		blogEntries = ArticleEntries{}
-		log.Println("Unable to parse cached data:", err)
+	} else if d, ok := cachedEntries.(ArticleEntries); ok {
+		return &d, nil
 	} else {
-		fmt.Println("returning cached article entries")
-		return &blogEntries, nil
+		log.Println("corrupted cached data:", d, err)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
@@ -85,16 +83,16 @@ func (cbs *CachedBlogService) GetAllArticleEntries() (*ArticleEntries, error) {
 	}
 
 	fmt.Println("caching article entries")
-	if err = cbs.cachingService.Set(url, blogEntries); err != nil {
+	if err = s.cachingService.Set(url, blogEntries); err != nil {
 		log.Println("failed to cache article entries:", err)
 	}
 	return &blogEntries, nil
 }
 
-func (cbs *CachedBlogService) QueryArticles(q, t string) (*ArticleEntries, error) {
+func (s *CachedBlogService) QueryArticles(q, t string) (*ArticleEntries, error) {
 	return nil, nil
 }
 
-func (cbs *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
+func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 	return nil, nil
 }
