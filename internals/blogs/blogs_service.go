@@ -10,6 +10,8 @@ import (
 	"github.com/sifatulrabbi/sifatul-api/internals/caching"
 )
 
+const StorageRootUrl = "https://raw.githubusercontent.com/sifatulrabbi/blogs/main"
+
 type ArticleItemBody struct {
 	ContentType string `json:"category_type"`
 	Content     string `json:"content"`
@@ -59,7 +61,7 @@ func NewCachedBlogService() CachedBlogService {
 
 func (s *CachedBlogService) GetAllArticleEntries() (*ArticleEntries, error) {
 	blogEntries := ArticleEntries{}
-	url := "https://raw.githubusercontent.com/sifatulrabbi/blogs/main/index.json"
+	url := fmt.Sprintf("%s/index.json", StorageRootUrl)
 
 	if cachedEntries, err := s.cachingService.Get(url); err != nil {
 		log.Println("Error while getting cached data:", err)
@@ -110,7 +112,7 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 		return nil, nil
 	}
 
-	url := fmt.Sprintf("https://raw.githubusercontent.com/sifatulrabbi/blogs/main%s", entry.Url)
+	url := fmt.Sprintf("%s%s", StorageRootUrl, entry.Url)
 
 	if cachedEntries, err := s.cachingService.Get(url); err != nil {
 		log.Println("Error while getting cached data:", err)
@@ -135,4 +137,60 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 	}
 	s.cachingService.Set(url, *article)
 	return article, nil
+}
+
+func (s *CachedBlogService) GetAllCategories() ([]string, error) {
+	url := fmt.Sprintf("%s/categories/index.json", StorageRootUrl)
+
+	if cachedData, err := s.cachingService.Get(url); err != nil {
+		log.Println("Error while getting cached data:", err)
+	} else if d, ok := cachedData.([]string); ok {
+		return d, nil
+	} else {
+		log.Println("corrupted cached data:", d, err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	categories := []string{}
+	if err := json.NewDecoder(res.Body).Decode(&categories); err != nil {
+		return nil, err
+	}
+	s.cachingService.Set(url, categories)
+	return categories, nil
+}
+
+func (s *CachedBlogService) GetAllTags() ([]string, error) {
+	url := fmt.Sprintf("%s/tags/index.json", StorageRootUrl)
+
+	if cachedData, err := s.cachingService.Get(url); err != nil {
+		log.Println("Error while getting cached data:", err)
+	} else if d, ok := cachedData.([]string); ok {
+		return d, nil
+	} else {
+		log.Println("corrupted cached data:", d, err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	tags := []string{}
+	if err := json.NewDecoder(res.Body).Decode(&tags); err != nil {
+		return nil, err
+	}
+	s.cachingService.Set(url, tags)
+	return tags, nil
 }

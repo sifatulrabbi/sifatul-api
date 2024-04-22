@@ -52,9 +52,39 @@ func getAllArticleEntries(c *gin.Context) {
 }
 
 func getAllCategories(c *gin.Context) {
+	blogsService := NewCachedBlogService()
+	categories, err := blogsService.GetAllCategories()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "Unable to get the categories",
+			"error":   err.Error(),
+		})
+		return
+	}
+	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "All categories list",
+		"data":    categories,
+	})
 }
 
 func getAllTags(c *gin.Context) {
+	blogsService := NewCachedBlogService()
+	tags, err := blogsService.GetAllTags()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "Unable to get the tags",
+			"error":   err.Error(),
+		})
+		return
+	}
+	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "All tags list",
+		"data":    tags,
+	})
 }
 
 func getArticleById(c *gin.Context) {
