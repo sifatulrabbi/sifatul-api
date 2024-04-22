@@ -63,12 +63,10 @@ func (s *CachedBlogService) GetAllArticleEntries() (*ArticleEntries, error) {
 	blogEntries := ArticleEntries{}
 	url := fmt.Sprintf("%s/index.json", StorageRootUrl)
 
-	if cachedEntries, err := s.cachingService.Get(url); err != nil {
-		log.Println("Error while getting cached data:", err)
-	} else if d, ok := cachedEntries.(ArticleEntries); ok {
-		return &d, nil
-	} else {
-		log.Println("corrupted cached data:", d, err)
+	if cachedEntries, err := caching.RetrieveCachedData[ArticleEntries](s.cachingService, url); err != nil {
+		log.Println("Error while retrieving cached data:", err)
+	} else if len(cachedEntries) > 0 {
+		return &cachedEntries, nil
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
@@ -85,9 +83,10 @@ func (s *CachedBlogService) GetAllArticleEntries() (*ArticleEntries, error) {
 		return nil, err
 	}
 
-	fmt.Println("caching article entries")
 	if err = s.cachingService.Set(url, blogEntries); err != nil {
 		log.Println("failed to cache article entries:", err)
+	} else {
+		fmt.Println("caching article entries")
 	}
 	return &blogEntries, nil
 }
@@ -114,12 +113,10 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 
 	url := fmt.Sprintf("%s%s", StorageRootUrl, entry.Url)
 
-	if cachedEntries, err := s.cachingService.Get(url); err != nil {
-		log.Println("Error while getting cached data:", err)
-	} else if d, ok := cachedEntries.(ArticleItem); ok {
-		return &d, nil
-	} else {
-		log.Println("corrupted cached data:", d, err)
+	if cachedData, err := caching.RetrieveCachedData[ArticleItem](s.cachingService, url); err != nil {
+		log.Println("Error while getting the cached data:", err)
+	} else if cachedData.ID != "" {
+		return &cachedData, nil
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
@@ -142,12 +139,10 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 func (s *CachedBlogService) GetAllCategories() ([]string, error) {
 	url := fmt.Sprintf("%s/categories/index.json", StorageRootUrl)
 
-	if cachedData, err := s.cachingService.Get(url); err != nil {
-		log.Println("Error while getting cached data:", err)
-	} else if d, ok := cachedData.([]string); ok {
-		return d, nil
-	} else {
-		log.Println("corrupted cached data:", d, err)
+	if cachedData, err := caching.RetrieveCachedData[[]string](s.cachingService, url); err != nil {
+		log.Println("Error while getting the cached data:", err)
+	} else if len(cachedData) > 0 {
+		return cachedData, nil
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
@@ -170,12 +165,10 @@ func (s *CachedBlogService) GetAllCategories() ([]string, error) {
 func (s *CachedBlogService) GetAllTags() ([]string, error) {
 	url := fmt.Sprintf("%s/tags/index.json", StorageRootUrl)
 
-	if cachedData, err := s.cachingService.Get(url); err != nil {
-		log.Println("Error while getting cached data:", err)
-	} else if d, ok := cachedData.([]string); ok {
-		return d, nil
-	} else {
-		log.Println("corrupted cached data:", d, err)
+	if cachedData, err := caching.RetrieveCachedData[[]string](s.cachingService, url); err != nil {
+		log.Println("Error while getting the cached data:", err)
+	} else if len(cachedData) > 0 {
+		return cachedData, nil
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)

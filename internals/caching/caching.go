@@ -1,13 +1,11 @@
 package caching
 
 import (
-	"errors"
 	"fmt"
+	"log"
 	"slices"
 	"time"
 )
-
-// TODO: implement auto cache clean up after a specific duration.
 
 type ICachingService interface {
 	Set(key string, v any) error
@@ -18,19 +16,42 @@ type ICachingService interface {
 type CustomExpiringCachingService struct {
 	keys              []string
 	store             *map[string]any
-	expirationMap     map[string]time.Time
+	expirationMap     *map[string]time.Time
 	defaultExpireTime time.Duration
 }
 
-var globalCacheStore = map[string]any{}
+var (
+	globalCacheStore     = map[string]any{}
+	globalExpirationMap  = map[string]time.Time{}
+	cacheCleanUpInterval = time.Second * 1
+)
+
+func init() {
+	fmt.Printf("Starting cache cleanup cycle.\nCurrent cache cleanup interval: %s\n", cacheCleanUpInterval.String())
+	go func() {
+		for {
+			itemsToRemove := []string{}
+			for k, exp := range globalExpirationMap {
+				if exp.UTC().UnixMilli() < time.Now().UTC().UnixMilli() {
+					itemsToRemove = append(itemsToRemove, k)
+				}
+			}
+			for _, k := range itemsToRemove {
+				delete(globalCacheStore, k)
+				delete(globalExpirationMap, k)
+			}
+			time.Sleep(cacheCleanUpInterval)
+		}
+	}()
+}
 
 var _ ICachingService = &CustomExpiringCachingService{}
 
 func NewCustomExpiringCachingService(defaultExpireTime time.Duration) *CustomExpiringCachingService {
 	cachingService := CustomExpiringCachingService{
 		keys:              []string{},
-		expirationMap:     map[string]time.Time{},
 		defaultExpireTime: defaultExpireTime,
+		expirationMap:     &globalExpirationMap,
 		store:             &globalCacheStore,
 	}
 	return &cachingService
@@ -40,10 +61,12 @@ func RetrieveCachedData[T any](service ICachingService, key string) (T, error) {
 	var data T
 	v, err := service.Get(key)
 	if err != nil {
-		return data, nil
+		log.Println("unable to get retrieve data due to:", err)
+		return data, err
 	}
 	if d, ok := v.(T); !ok {
-		return data, errors.New("Unable to convert the cached data. Corrupted cache found.")
+		log.Println("cached data does not match the expected type:", v)
+		return data, fmt.Errorf("Unable to convert the cached data. Corrupted cache found.")
 	} else {
 		data = d
 	}
@@ -55,25 +78,21 @@ func (c *CustomExpiringCachingService) Set(key string, v any) error {
 	if !slices.Contains(c.keys, key) {
 		c.keys = append(c.keys, key)
 	}
-	c.expirationMap[key] = time.Now().Add(c.defaultExpireTime).UTC()
+	(*c.expirationMap)[key] = time.Now().Add(c.defaultExpireTime)
 	return nil
 }
 
 func (c *CustomExpiringCachingService) Get(key string) (any, error) {
 	v, exists := (*c.store)[key]
 	if !exists {
-		return nil, fmt.Errorf("No cache found with key: '%s'", key)
+		return nil, fmt.Errorf("No cache found or has expired. Key: '%s'", key)
 	}
-	if time.Now().UTC().UnixMilli() > c.expirationMap[key].UnixMilli() {
-		return nil, fmt.Errorf("Cache expired")
-	}
-
 	return v, nil
 }
 
 func (c *CustomExpiringCachingService) Del(key string) {
 	delete(*c.store, key)
-	delete(c.expirationMap, key)
+	delete(*c.expirationMap, key)
 	c.keys = slices.DeleteFunc(c.keys, func(k string) bool {
 		return k == key
 	})

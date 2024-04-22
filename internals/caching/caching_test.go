@@ -81,8 +81,8 @@ func TestCachingExpiration(t *testing.T) {
 	v3 = retrieveAndPanic[complexData](t, service3, k3)
 	if v1.message != d1.message || v2.message != d2.message || v3.message != d3.message {
 		t.Error("retrieved value did not match the original value", v1, v2, v3)
+		t.FailNow()
 	}
-
 	fmt.Println("PASS: delayed access after 1 second")
 
 	time.Sleep(time.Second * 5)
@@ -92,10 +92,12 @@ func TestCachingExpiration(t *testing.T) {
 		t.Error("retrieved value did not match the original value", v1, v2, v3)
 	}
 	v1, err := RetrieveCachedData[complexData](service1, k1)
-	if err != nil {
+	if err == nil {
 		t.Error("Failed to expire cache with key:", k1)
+		t.FailNow()
+	} else {
+		t.Log("v1 has expired:", v1, err)
 	}
-
 	fmt.Println("PASS: delayed access after 5 seconds")
 
 	time.Sleep(time.Second * 55)
@@ -104,10 +106,12 @@ func TestCachingExpiration(t *testing.T) {
 		t.Error("retrieved value did not match the original value", v3)
 	}
 	v2, err = RetrieveCachedData[complexData](service2, k2)
-	if err != nil {
+	if err == nil {
 		t.Error("Failed to expire cache with key:", k2)
+		t.FailNow()
+	} else {
+		t.Log("v2 has expired:", v2, err)
 	}
-
 	fmt.Println("PASS: delayed access after 55 seconds")
 }
 
