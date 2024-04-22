@@ -29,9 +29,14 @@ type ArticleItem struct {
 }
 
 type ArticleEntry struct {
-	ID       string `json:"id"`
-	Metadata string `json:"metadata"`
-	Url      string `json:"url"`
+	ID        string    `json:"id"`
+	Url       string    `json:"url"`
+	Title     string    `json:"title"`
+	Summary   string    `json:"summary"`
+	Category  string    `json:"category"`
+	Tags      []string  `json:"tags"`
+	CreateAt  time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type ArticleEntries []ArticleEntry
