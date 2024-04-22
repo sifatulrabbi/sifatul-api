@@ -1,30 +1,13 @@
 package caching
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
 
-func TestCachingExpiration(t *testing.T) {
-	c := NewCustomExpiringCachingService(time.Second * 3)
-	c.Set("hello", "world")
-
-	time.Sleep(time.Second * 1)
-	v, err := c.Get("hello")
-	if ogValue, ok := v.(string); !ok {
-		t.Error("invalid returned data type")
-		return
-	} else {
-		if err != nil || ogValue != "world" {
-			t.Error("failed to retrieve cache:", v, err)
-		}
-	}
-
-	time.Sleep(time.Second * 2)
-	_, err = c.Get("hello")
-	if err == nil {
-		t.Error("failed to expire cache:", err)
-	}
+type complexData struct {
+	message string
 }
 
 func TestCachingMaps(t *testing.T) {
@@ -51,10 +34,6 @@ func TestCachingMaps(t *testing.T) {
 }
 
 func TestCachingComplexData(t *testing.T) {
-	type complexData struct {
-		message string
-	}
-
 	c := NewCustomExpiringCachingService(time.Second * 3)
 	key := "hello-2"
 	if err := c.Set(key, complexData{message: "Hello World"}); err != nil {
@@ -70,4 +49,73 @@ func TestCachingComplexData(t *testing.T) {
 	} else if d.message != "Hello World" {
 		t.Error("data got corrupted:", d)
 	}
+}
+
+func TestCachingExpiration(t *testing.T) {
+	service1 := NewCustomExpiringCachingService(time.Second * 3)
+	service2 := NewCustomExpiringCachingService(time.Minute * 1)
+	service3 := NewCustomExpiringCachingService(time.Hour * 1)
+	k1 := "hello"
+	k2 := "hello2"
+	k3 := "hello3"
+	d1 := complexData{message: "world1"}
+	d2 := complexData{message: "world2"}
+	d3 := complexData{message: "world3"}
+
+	service1.Set(k1, d1)
+	service2.Set(k2, d2)
+	service3.Set(k3, d3)
+
+	v1 := retrieveAndPanic[complexData](t, service1, k1)
+	v2 := retrieveAndPanic[complexData](t, service2, k2)
+	v3 := retrieveAndPanic[complexData](t, service3, k3)
+	if v1.message != d1.message || v2.message != d2.message || v3.message != d3.message {
+		t.Error("retrieved value did not match the original value", v1, v2, v3)
+	}
+
+	fmt.Println("PASS: immediate access")
+
+	time.Sleep(time.Second * 1)
+	v1 = retrieveAndPanic[complexData](t, service1, k1)
+	v2 = retrieveAndPanic[complexData](t, service2, k2)
+	v3 = retrieveAndPanic[complexData](t, service3, k3)
+	if v1.message != d1.message || v2.message != d2.message || v3.message != d3.message {
+		t.Error("retrieved value did not match the original value", v1, v2, v3)
+	}
+
+	fmt.Println("PASS: delayed access after 1 second")
+
+	time.Sleep(time.Second * 5)
+	v2 = retrieveAndPanic[complexData](t, service2, k2)
+	v3 = retrieveAndPanic[complexData](t, service3, k3)
+	if v2.message != d2.message || v3.message != d3.message {
+		t.Error("retrieved value did not match the original value", v1, v2, v3)
+	}
+	v1, err := RetrieveCachedData[complexData](service1, k1)
+	if err != nil {
+		t.Error("Failed to expire cache with key:", k1)
+	}
+
+	fmt.Println("PASS: delayed access after 5 seconds")
+
+	time.Sleep(time.Second * 55)
+	v3 = retrieveAndPanic[complexData](t, service3, k3)
+	if v3.message != d3.message {
+		t.Error("retrieved value did not match the original value", v3)
+	}
+	v2, err = RetrieveCachedData[complexData](service2, k2)
+	if err != nil {
+		t.Error("Failed to expire cache with key:", k2)
+	}
+
+	fmt.Println("PASS: delayed access after 55 seconds")
+}
+
+func retrieveAndPanic[T any](t *testing.T, service ICachingService, key string) T {
+	v, err := RetrieveCachedData[T](service, key)
+	if err != nil {
+		t.Errorf("corrupted cached data for %s\n%v", key, err)
+		return v
+	}
+	return v
 }

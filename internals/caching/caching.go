@@ -1,6 +1,7 @@
 package caching
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -35,12 +36,26 @@ func NewCustomExpiringCachingService(defaultExpireTime time.Duration) *CustomExp
 	return &cachingService
 }
 
+func RetrieveCachedData[T any](service ICachingService, key string) (T, error) {
+	var data T
+	v, err := service.Get(key)
+	if err != nil {
+		return data, nil
+	}
+	if d, ok := v.(T); !ok {
+		return data, errors.New("Unable to convert the cached data. Corrupted cache found.")
+	} else {
+		data = d
+	}
+	return data, nil
+}
+
 func (c *CustomExpiringCachingService) Set(key string, v any) error {
 	(*c.store)[key] = v
 	if !slices.Contains(c.keys, key) {
 		c.keys = append(c.keys, key)
 	}
-	c.expirationMap[key] = time.Now().UTC().Add(c.defaultExpireTime)
+	c.expirationMap[key] = time.Now().Add(c.defaultExpireTime).UTC()
 	return nil
 }
 
@@ -49,10 +64,9 @@ func (c *CustomExpiringCachingService) Get(key string) (any, error) {
 	if !exists {
 		return nil, fmt.Errorf("No cache found with key: '%s'", key)
 	}
-	// TODO: need to expire cache after a certain time
-	// if time.Now().UTC().UnixMilli() > c.expirationMap[key].UnixMilli() {
-	// 	return nil, fmt.Errorf("Cache expired")
-	// }
+	if time.Now().UTC().UnixMilli() > c.expirationMap[key].UnixMilli() {
+		return nil, fmt.Errorf("Cache expired")
+	}
 
 	return v, nil
 }
