@@ -1,6 +1,7 @@
 package blogs
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -62,10 +63,20 @@ func getArticleById(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"success": false, "message": "'id' is not found."})
 		return
 	}
+	blogsService := NewCachedBlogService()
+	article, err := blogsService.FindArticleById(id)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("No blog found with id: %s", id),
+			"error":   err.Error(),
+		})
+		return
+	}
 	c.AbortWithStatusJSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Blog found",
-		"data":    "",
+		"data":    article,
 	})
 }
 

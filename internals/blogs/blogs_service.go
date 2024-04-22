@@ -29,6 +29,7 @@ type ArticleItem struct {
 type ArticleEntry struct {
 	ID       string `json:"id"`
 	Metadata string `json:"metadata"`
+	Url      string `json:"url"`
 }
 
 type ArticleEntries []ArticleEntry
@@ -94,5 +95,44 @@ func (s *CachedBlogService) QueryArticles(q, t string) (*ArticleEntries, error) 
 }
 
 func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
-	return nil, nil
+	allEntries, err := s.GetAllArticleEntries()
+	if err != nil {
+		return nil, err
+	}
+	var entry *ArticleEntry = nil
+	for _, e := range *allEntries {
+		if e.ID == id {
+			entry = &e
+			break
+		}
+	}
+	if entry == nil {
+		return nil, nil
+	}
+
+	url := fmt.Sprintf("https://raw.githubusercontent.com/sifatulrabbi/blogs/main%s", entry.Url)
+
+	if cachedEntries, err := s.cachingService.Get(url); err != nil {
+		log.Println("Error while getting cached data:", err)
+	} else if d, ok := cachedEntries.(ArticleItem); ok {
+		return &d, nil
+	} else {
+		log.Println("corrupted cached data:", d, err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	article := &ArticleItem{}
+	if err := json.NewDecoder(res.Body).Decode(article); err != nil {
+		return nil, err
+	}
+	s.cachingService.Set(url, *article)
+	return article, nil
 }
