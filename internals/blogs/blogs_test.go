@@ -3,7 +3,17 @@ package blogs
 import (
 	"fmt"
 	"testing"
+	"time"
 )
+
+func TestDateParsing(t *testing.T) {
+	if loc, err := time.LoadLocation("Asia/Dhaka"); err != nil {
+		t.Error(err)
+	} else {
+		nowDhaka := time.Now().In(loc)
+		fmt.Println("Current time in Dhaka:", nowDhaka.Format(time.RFC1123))
+	}
+}
 
 func TestGetBlogEntries(t *testing.T) {
 	s := NewCachedBlogService()
@@ -15,15 +25,7 @@ func TestGetBlogEntries(t *testing.T) {
 	if len(*entries) < 1 {
 		t.Fatal("incorrect amount of entries")
 	}
-}
 
-func TestParseMdText(t *testing.T) {
-	s := NewCachedBlogService()
-	mockId := "mock-article-on-tree-plantation"
-	article, err := s.FindArticleById(mockId)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	fmt.Println(article.Body)
+	e := (*entries)[0]
+	t.Log(e.CreatedAt)
 }
