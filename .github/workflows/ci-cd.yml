@@ -84,7 +84,7 @@ jobs:
           username: root
           script: |
             cd ~/apps/sifatul-api && \
-            docker compose down && \
+            docker compose down -v && \
             docker compose up -d
 
       - name: Copy sifatul.com.conf
