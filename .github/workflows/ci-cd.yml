@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  VERSION: 0.2.1
+  VERSION: 1.2.1
   GO_VERSION: 1.22.0
 
 jobs:

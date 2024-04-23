@@ -1,6 +1,6 @@
 services:
   sifatul-api:
-    image: sifatulrabbi/sifatul-api:0.2.1
+    image: sifatulrabbi/sifatul-api:1.2.1
     ports:
       - "9876:9876"
     env_file: ./.env
