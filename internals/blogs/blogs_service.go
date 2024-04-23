@@ -3,6 +3,7 @@ package blogs
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -35,7 +36,7 @@ type ArticleEntry struct {
 	Summary   string    `json:"summary"`
 	Category  string    `json:"category"`
 	Tags      []string  `json:"tags"`
-	CreateAt  time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -90,8 +91,6 @@ func (s *CachedBlogService) GetAllArticleEntries() (*ArticleEntries, error) {
 
 	if err = s.cachingService.Set(url, blogEntries); err != nil {
 		log.Println("failed to cache article entries:", err)
-	} else {
-		fmt.Println("caching article entries")
 	}
 	return &blogEntries, nil
 }
@@ -113,7 +112,7 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 		}
 	}
 	if entry == nil {
-		return nil, nil
+		return nil, fmt.Errorf("No article found with id: '%s'", id)
 	}
 
 	url := fmt.Sprintf("%s%s", StorageRootUrl, entry.Url)
@@ -133,12 +132,24 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-	article := &ArticleItem{}
-	if err := json.NewDecoder(res.Body).Decode(article); err != nil {
-		return nil, err
+
+	article := ArticleItem{
+		ID:        entry.ID,
+		Title:     entry.Title,
+		Summary:   entry.Summary,
+		Category:  entry.Category,
+		Tags:      entry.Tags,
+		CreatedAt: entry.CreatedAt,
+		UpdatedAt: entry.UpdatedAt,
+		Body:      []ArticleItemBody{},
 	}
-	s.cachingService.Set(url, *article)
-	return article, nil
+	content, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse article content due to: '%s'", err)
+	}
+	article.Body = append(article.Body, ArticleItemBody{ContentType: "markdown", Content: string(content)})
+	s.cachingService.Set(url, article)
+	return &article, nil
 }
 
 func (s *CachedBlogService) GetAllCategories() ([]string, error) {
