@@ -87,14 +87,14 @@ jobs:
             docker compose down -v && \
             docker compose up -d
 
-      - name: Copy sifatul.com.conf
+      - name: Copy portfolio.conf
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.HOST }}
           port: 22
           key: ${{ secrets.SSH_SECRET_KEY }}
           username: root
-          source: sifatul.com.conf
+          source: portfolio.conf
           target: /etc/nginx/conf.d
           overwrite: true
 
