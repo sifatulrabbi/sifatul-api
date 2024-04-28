@@ -3,8 +3,11 @@ package blogs
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/sifatulrabbi/sifatul-api/internals/caching"
 )
 
 func RegisterBlogRoutes(r *gin.RouterGroup) {
@@ -20,7 +23,8 @@ func getAllArticleEntries(c *gin.Context) {
 		entries *ArticleEntries
 		err     error
 	)
-	blogsService := NewCachedBlogService()
+	cachingService := caching.NewCustomExpiringCachingService(time.Hour * 1)
+	blogsService := NewCachedBlogService(cachingService)
 
 	q := c.Query("q")
 	t := c.Query("t")
@@ -52,7 +56,8 @@ func getAllArticleEntries(c *gin.Context) {
 }
 
 func getAllCategories(c *gin.Context) {
-	blogsService := NewCachedBlogService()
+	cachingService := caching.NewCustomExpiringCachingService(time.Hour * 1)
+	blogsService := NewCachedBlogService(cachingService)
 	categories, err := blogsService.GetAllCategories()
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, gin.H{
@@ -70,7 +75,8 @@ func getAllCategories(c *gin.Context) {
 }
 
 func getAllTags(c *gin.Context) {
-	blogsService := NewCachedBlogService()
+	cachingService := caching.NewCustomExpiringCachingService(time.Hour * 1)
+	blogsService := NewCachedBlogService(cachingService)
 	tags, err := blogsService.GetAllTags()
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, gin.H{
@@ -93,7 +99,8 @@ func getArticleById(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"success": false, "message": "'id' is not found."})
 		return
 	}
-	blogsService := NewCachedBlogService()
+	cachingService := caching.NewCustomExpiringCachingService(time.Hour * 1)
+	blogsService := NewCachedBlogService(cachingService)
 	article, err := blogsService.FindArticleById(id)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, gin.H{

@@ -13,6 +13,19 @@ import (
 
 const StorageRootUrl = "https://raw.githubusercontent.com/sifatulrabbi/blogs/main"
 
+func init() {
+	cachingService := caching.NewCustomExpiringCachingService(time.Hour * 24)
+	blogsService := NewCachedBlogService(cachingService)
+	go func() {
+		for {
+			if _, err := blogsService.GetAllArticleEntries(); err != nil {
+				log.Println("error while getting article entries in the background.", err)
+			}
+			time.Sleep(time.Hour * 1)
+		}
+	}()
+}
+
 type ArticleItemBody struct {
 	ContentType string `json:"category_type"`
 	Content     string `json:"content"`
@@ -58,10 +71,8 @@ type CachedBlogService struct {
 
 var _ IBlogService = &CachedBlogService{}
 
-func NewCachedBlogService() CachedBlogService {
-	s := CachedBlogService{
-		cachingService: caching.NewCustomExpiringCachingService(time.Hour * 1),
-	}
+func NewCachedBlogService(cachingService caching.ICachingService) CachedBlogService {
+	s := CachedBlogService{cachingService: cachingService}
 	return s
 }
 
