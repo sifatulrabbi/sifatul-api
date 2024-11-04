@@ -1,1 +1,1 @@
-# API for my portfolio and blog site.
+# API for my portfolio and blog site
