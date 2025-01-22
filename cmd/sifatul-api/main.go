@@ -25,10 +25,13 @@ func main() {
 	v1.POST("/emails/to-me", emails.HandleEmailToMe)
 	blogs.RegisterBlogRoutes(v1)
 
+	r.GET("/api/health", func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": "API is up and serving ginger bread.", "success": true})
+	})
+
 	r.NoRoute(func(c *gin.Context) {
 		errMsg := fmt.Sprintf("Not found: %s %s", c.Request.Method, c.Request.URL.Path)
-		c.JSON(http.StatusNotFound, gin.H{"message": errMsg, "success": false})
-		c.Abort()
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": errMsg, "success": false})
 	})
 
 	if err := r.Run(":" + PORT); err != nil {
