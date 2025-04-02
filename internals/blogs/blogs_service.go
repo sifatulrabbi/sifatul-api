@@ -123,13 +123,13 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 		}
 	}
 	if entry == nil {
-		return nil, fmt.Errorf("No article found with id: '%s'", id)
+		return nil, fmt.Errorf("no article found with id: '%s'", id)
 	}
 
 	url := fmt.Sprintf("%s%s", StorageRootUrl, entry.Url)
 
 	if cachedData, err := caching.RetrieveCachedData[ArticleItem](s.cachingService, url); err != nil {
-		log.Println("Error while getting the cached data:", err)
+		log.Println("error while getting the cached data:", err)
 	} else if cachedData.ID != "" {
 		return &cachedData, nil
 	}
@@ -156,7 +156,7 @@ func (s *CachedBlogService) FindArticleById(id string) (*ArticleItem, error) {
 	}
 	content, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse article content due to: '%s'", err)
+		return nil, fmt.Errorf("unable to parse article content due to: '%s'", err)
 	}
 	article.Body = append(article.Body, ArticleItemBody{ContentType: "markdown", Content: string(content)})
 	s.cachingService.Set(url, article)
