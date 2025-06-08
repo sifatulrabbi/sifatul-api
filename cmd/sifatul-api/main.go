@@ -1,79 +1,53 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"net/http"
+	"log"
 	"os"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 
-	"github.com/sifatulrabbi/sifatul-api/internals/blogs"
-	"github.com/sifatulrabbi/sifatul-api/internals/controllers/emails"
-)
-
-var (
-	GOENV = os.Getenv("GOENV")
-	PORT  string
+	sifatulapi "github.com/sifatulrabbi/sifatul-api"
 )
 
 func main() {
-	prepareENV()
-	r := setupRouter()
-	v1 := r.Group("/api/v1")
-	v1.POST("/emails/to-me", emails.HandleEmailToMe)
-	blogs.RegisterBlogRoutes(v1)
-
-	r.GET("/api/health", func(c *gin.Context) {
-		c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": "API is up and serving ginger bread.", "success": true})
-	})
-
-	r.NoRoute(func(c *gin.Context) {
-		errMsg := fmt.Sprintf("Not found: %s %s", c.Request.Method, c.Request.URL.Path)
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": errMsg, "success": false})
-	})
-
-	if err := r.Run(":" + PORT); err != nil {
+	runCtx := context.Background()
+	runCtx = prepareENV(runCtx)
+	runCtx = prepareDB(runCtx)
+	if err := sifatulapi.StartAPI(runCtx); err != nil {
 		panic(err)
 	}
 }
 
-func prepareENV() {
+func prepareENV(ctx context.Context) context.Context {
+	fmt.Println("Preparing ENV vars...")
+	var (
+		GOENV = os.Getenv("GOENV")
+		PORT  string
+	)
 	if GOENV != "production" {
-		if err := godotenv.Load(); err != nil {
-			panic(err)
+		if err := godotenv.Load(".env"); err != nil {
+			log.Panicln("No .env file found", err)
 		}
 	}
 	PORT = os.Getenv("PORT")
+	if PORT == "" {
+		PORT = "9876"
+	}
+	ctx = context.WithValue(ctx, sifatulapi.GOENV, GOENV)
+	ctx = context.WithValue(ctx, sifatulapi.PORT, PORT)
+	return ctx
 }
 
-func setupRouter() *gin.Engine {
-	r := gin.Default()
-
-	corsConfig := cors.DefaultConfig()
-	// corsConfig.AllowOrigins = []string{"https://sifatul.com", "http://localhost:3000", "https://www.sifatul.com"}
-	corsConfig.AllowOrigins = []string{"*"}
-	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
-	corsConfig.AllowHeaders = []string{
-		"Accept",
-		"Accept-Encoding",
-		"Accept-Language",
-		"Access-Control-Request-Headers",
-		"Access-Control-Request-Method",
-		"Authorization",
-		"Connection",
-		"Content-Type",
-		"Cookie",
-		"Date",
-		"If-Modified-Since",
-		"If-None-Match",
-		"Origin",
-		"Referrer",
-		"User-Agent",
-		"X-Requested-With",
+func prepareDB(ctx context.Context) context.Context {
+	fmt.Println("Preparing DB connection...")
+	db, err := gorm.Open(sqlite.Open("sifatulapi.db"), &gorm.Config{})
+	if err != nil {
+		log.Panicln("Failed to connect with sqlite database:", err)
 	}
-	r.Use(cors.New(corsConfig))
-
-	return r
+	ctx = context.WithValue(ctx, sifatulapi.DB_CONN, db)
+	return ctx
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/sifatulrabbi/sifatul-api/internals/caching"
 )
 
 func TestDateParsing(t *testing.T) {
@@ -16,7 +18,7 @@ func TestDateParsing(t *testing.T) {
 }
 
 func TestGetBlogEntries(t *testing.T) {
-	s := NewCachedBlogService()
+	s := NewCachedBlogService(caching.NewCustomExpiringCachingService(time.Second * 3))
 	entries, err := s.GetAllArticleEntries()
 	if err != nil {
 		t.Fatal(err)
